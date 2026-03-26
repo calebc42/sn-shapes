@@ -16,7 +16,7 @@ const SIZE = 200;
 function expectPenDefaults(geo: Geometry) {
   expect(geo.penColor).toBe(0x00);
   expect(geo.penType).toBe(10);
-  expect(geo.penWidth).toBe(2);
+  expect(geo.penWidth).toBe(200);
 }
 
 function assertPolygon(geo: Geometry): asserts geo is PolygonGeometry {
@@ -122,8 +122,8 @@ describe('starPoints', () => {
 });
 
 describe('SHAPES', () => {
-  it('contains 12 shapes', () => {
-    expect(SHAPES).toHaveLength(12);
+  it('contains 11 shapes', () => {
+    expect(SHAPES).toHaveLength(11);
   });
 
   it('each shape has a unique id', () => {
@@ -160,12 +160,13 @@ describe('SHAPES', () => {
     });
   });
 
-  it('square has 4 axis-aligned points', () => {
+  it('square has 5 points (closed polygon)', () => {
     const geo = SHAPES.find(s => s.id === 'square')!.build(CENTER, SIZE);
     assertPolygon(geo);
-    expect(geo.points).toHaveLength(4);
-    const xs = geo.points.map(p => p.x);
-    const ys = geo.points.map(p => p.y);
+    expect(geo.points).toHaveLength(5);
+    expect(geo.points[0]).toEqual(geo.points[4]);
+    const xs = geo.points.slice(0, 4).map(p => p.x);
+    const ys = geo.points.slice(0, 4).map(p => p.y);
     expect(new Set(xs).size).toBe(2);
     expect(new Set(ys).size).toBe(2);
   });
@@ -182,30 +183,27 @@ describe('SHAPES', () => {
     expect(geo.ellipseMajorAxisRadius).not.toBe(geo.ellipseMinorAxisRadius);
   });
 
-  it('diamond has 4 points forming a rotated square', () => {
+  it('diamond has 5 points (closed) forming a rotated square', () => {
     const geo = SHAPES.find(s => s.id === 'diamond')!.build(CENTER, SIZE);
     assertPolygon(geo);
-    expect(geo.points).toHaveLength(4);
+    expect(geo.points).toHaveLength(5);
+    expect(geo.points[0]).toEqual(geo.points[4]);
     expect(geo.points[0].x).toBeCloseTo(CENTER.x);
     expect(geo.points[0].y).toBeLessThan(CENTER.y);
   });
 
-  it('triangle has 3 points', () => {
+  it('triangle has 4 points (closed)', () => {
     const geo = SHAPES.find(s => s.id === 'triangle')!.build(CENTER, SIZE);
     assertPolygon(geo);
-    expect(geo.points).toHaveLength(3);
+    expect(geo.points).toHaveLength(4);
+    expect(geo.points[0]).toEqual(geo.points[3]);
   });
 
-  it('star6 has 12 points', () => {
-    const geo = SHAPES.find(s => s.id === 'star6')!.build(CENTER, SIZE);
-    assertPolygon(geo);
-    expect(geo.points).toHaveLength(12);
-  });
-
-  it('parallelogram has 4 points with parallel sides', () => {
+  it('parallelogram has 5 points (closed) with parallel sides', () => {
     const geo = SHAPES.find(s => s.id === 'parallelogram')!.build(CENTER, SIZE);
     assertPolygon(geo);
-    expect(geo.points).toHaveLength(4);
+    expect(geo.points).toHaveLength(5);
+    expect(geo.points[0]).toEqual(geo.points[4]);
     const topWidth = geo.points[1].x - geo.points[0].x;
     const bottomWidth = geo.points[2].x - geo.points[3].x;
     expect(topWidth).toBeCloseTo(bottomWidth, 5);
@@ -218,13 +216,14 @@ describe('SHAPES', () => {
   });
 
   it.each([
-    ['pentagon', 5],
-    ['hexagon', 6],
-    ['heptagon', 7],
-    ['octagon', 8],
-  ])('%s has %d points', (id, expected) => {
+    ['pentagon', 6],
+    ['hexagon', 7],
+    ['heptagon', 8],
+    ['octagon', 9],
+  ])('%s has %d points (closed)', (id, expected) => {
     const geo = SHAPES.find(s => s.id === id)!.build(CENTER, SIZE);
     assertPolygon(geo);
     expect(geo.points).toHaveLength(expected);
+    expect(geo.points[0]).toEqual(geo.points[expected - 1]);
   });
 });

@@ -1,11 +1,11 @@
 import React, {useCallback, useRef} from 'react';
-import {View, Pressable, StyleSheet} from 'react-native';
+import {View, Image, Text, Pressable, StyleSheet, ImageSourcePropType} from 'react-native';
 import {PluginCommAPI, PluginManager, PluginFileAPI} from 'sn-plugin-lib';
-import {SHAPES, Shape, PolygonGeometry, CircleGeometry, EllipseGeometry} from './shapes';
+import {SHAPES, Shape} from './shapes';
 
 const COLS = 3;
 export const CELL_SIZE = 48;
-const PREVIEW_INNER_SIZE = CELL_SIZE - 12;
+const THUMBNAIL_SIZE = 36;
 const GAP = 6;
 const PANEL_PADDING = 10;
 const PANEL_WIDTH = COLS * CELL_SIZE + (COLS - 1) * GAP + PANEL_PADDING * 2;
@@ -15,99 +15,50 @@ export const DEFAULT_PAGE_HEIGHT = 1872;
 export const SHAPE_SIZE_RATIO = 0.12;
 
 export const TEST_IDS = {
-  overlay: 'shapes-overlay',
+  close: 'shapes-close',
   cell: (id: string) => `shape-cell-${id}`,
 } as const;
 
-function PolygonPreview({geo}: {geo: PolygonGeometry}) {
-  const {points} = geo;
-  const previewSize = PREVIEW_INNER_SIZE;
-  return (
-    <View style={{width: previewSize, height: previewSize}}>
-      {points.map((point, i) => {
-        const next = points[(i + 1) % points.length];
-        const dx = next.x - point.x;
-        const dy = next.y - point.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx);
-        return (
-          <View
-            key={i}
-            style={[
-              styles.line,
-              {
-                left: point.x,
-                top: point.y,
-                width: length,
-                transform: [{rotate: `${angle}rad`}],
-              },
-            ]}
-          />
-        );
-      })}
-    </View>
-  );
-}
+export const SHAPE_ICONS: Record<string, ImageSourcePropType> = {
+  square: require('../assets/shapes/shape_square.png'),
+  circle: require('../assets/shapes/shape_circle.png'),
+  roundedRect: require('../assets/shapes/shape_roundedRect.png'),
+  ellipse: require('../assets/shapes/shape_ellipse.png'),
+  triangle: require('../assets/shapes/shape_triangle.png'),
+  diamond: require('../assets/shapes/shape_diamond.png'),
+  pentagon: require('../assets/shapes/shape_pentagon.png'),
+  hexagon: require('../assets/shapes/shape_hexagon.png'),
+  heptagon: require('../assets/shapes/shape_heptagon.png'),
+  octagon: require('../assets/shapes/shape_octagon.png'),
+  parallelogram: require('../assets/shapes/shape_parallelogram.png'),
+};
 
-function EllipsePreview({geo}: {geo: CircleGeometry | EllipseGeometry}) {
-  const {ellipseCenterPoint: cp, ellipseMajorAxisRadius: rx, ellipseMinorAxisRadius: ry} = geo;
-  const previewSize = PREVIEW_INNER_SIZE;
-  return (
-    <View style={{width: previewSize, height: previewSize}}>
-      <View
-        style={[
-          styles.ellipsePositioned,
-          {
-            width: rx * 2,
-            height: ry * 2,
-            left: cp.x - rx,
-            top: cp.y - ry,
-          },
-        ]}
-      />
-    </View>
-  );
-}
-
-function ShapePreview({shape}: {shape: Shape}) {
-  const previewSize = PREVIEW_INNER_SIZE;
-  const center = {x: previewSize / 2, y: previewSize / 2};
-  const geo = shape.build(center, previewSize * 0.8);
-
-  switch (geo.type) {
-    case 'GEO_polygon':
-      return <PolygonPreview geo={geo} />;
-    case 'GEO_circle':
-    case 'GEO_ellipse':
-      return <EllipsePreview geo={geo} />;
-  }
-}
-
-async function resolvePageCenter(): Promise<{center: {x: number; y: number}; shapeSize: number}> {
-  let pageWidth = DEFAULT_PAGE_WIDTH;
-  let pageHeight = DEFAULT_PAGE_HEIGHT;
-
+async function resolvePageSize(): Promise<{width: number; height: number}> {
   try {
-    const res = await PluginFileAPI.getPageSize();
-    if (res?.success && res.result) {
-      pageWidth = res.result.width;
-      pageHeight = res.result.height;
+    const pathRes = await PluginCommAPI.getCurrentFilePath();
+    const pageRes = await PluginCommAPI.getCurrentPageNum();
+    if (pathRes?.success && pageRes?.success) {
+      const sizeRes = await PluginFileAPI.getPageSize(pathRes.result, pageRes.result);
+      if (sizeRes?.success && sizeRes.result) {
+        return sizeRes.result;
+      }
     }
   } catch {
-    // Use defaults
+    // Fall through to defaults
   }
-
-  return {
-    center: {x: pageWidth / 2, y: pageHeight / 2},
-    shapeSize: pageWidth * SHAPE_SIZE_RATIO,
-  };
+  return {width: DEFAULT_PAGE_WIDTH, height: DEFAULT_PAGE_HEIGHT};
 }
 
 async function insertShape(shape: Shape): Promise<void> {
-  const {center, shapeSize} = await resolvePageCenter();
+  const {width, height} = await resolvePageSize();
+  const center = {x: width / 2, y: height / 2};
+  const shapeSize = width * SHAPE_SIZE_RATIO;
   const geometry = shape.build(center, shapeSize);
-  await PluginCommAPI.insertGeometry(geometry);
-  await PluginManager.closePluginView();
+  const res = await PluginCommAPI.insertGeometry(geometry);
+  if (!res?.success) {
+    console.error('insertGeometry failed:', JSON.stringify(res));
+    throw new Error(res?.error?.message ?? 'insertGeometry failed');
+  }
 }
 
 export default function ShapePalette() {
@@ -120,15 +71,15 @@ export default function ShapePalette() {
     insertingRef.current = true;
     try {
       await insertShape(shape);
-    } catch {
-      // Insertion failed; allow retry
+    } catch (e) {
+      console.error('Shape insertion error:', e);
     } finally {
       insertingRef.current = false;
     }
   }, []);
 
-  const handleDismiss = useCallback(async () => {
-    await PluginManager.closePluginView();
+  const handleClose = useCallback(() => {
+    PluginManager.closePluginView();
   }, []);
 
   const rows: Shape[][] = [];
@@ -137,8 +88,16 @@ export default function ShapePalette() {
   }
 
   return (
-    <Pressable testID={TEST_IDS.overlay} style={styles.overlay} onPress={handleDismiss}>
-      <View style={styles.panel} onStartShouldSetResponder={() => true}>
+    <View style={styles.container}>
+      <View style={styles.panel}>
+        <View style={styles.header}>
+          <Pressable
+            testID={TEST_IDS.close}
+            style={styles.closeButton}
+            onPress={handleClose}>
+            <Text style={styles.closeText}>✕</Text>
+          </Pressable>
+        </View>
         {rows.map((row, rowIdx) => (
           <View key={rowIdx} style={styles.row}>
             {row.map(shape => (
@@ -147,25 +106,28 @@ export default function ShapePalette() {
                 key={shape.id}
                 style={styles.cell}
                 onPress={() => handleShapeTap(shape)}>
-                <ShapePreview shape={shape} />
+                <Image
+                  source={SHAPE_ICONS[shape.id]}
+                  style={styles.thumbnail}
+                />
               </Pressable>
             ))}
           </View>
         ))}
       </View>
-    </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'transparent',
   },
   panel: {
-    position: 'absolute',
-    bottom: 20,
-    left: 70,
+    marginLeft: 70,
     width: PANEL_WIDTH,
     backgroundColor: '#EFEBE6',
     borderRadius: 6,
@@ -175,6 +137,21 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.15,
     shadowRadius: 4,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 4,
+  },
+  closeButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeText: {
+    fontSize: 14,
+    color: '#666',
   },
   row: {
     flexDirection: 'row',
@@ -189,17 +166,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#F5F0EB',
   },
-  line: {
-    position: 'absolute',
-    height: 1.5,
-    backgroundColor: '#333',
-    transformOrigin: '0% 50%',
-  },
-  ellipsePositioned: {
-    position: 'absolute',
-    borderWidth: 1.5,
-    borderColor: '#333',
-    borderRadius: 9999,
-    backgroundColor: 'transparent',
+  thumbnail: {
+    width: THUMBNAIL_SIZE,
+    height: THUMBNAIL_SIZE,
+    resizeMode: 'contain',
   },
 });

@@ -1,16 +1,16 @@
 import React from 'react';
 import {create, act, ReactTestRenderer} from 'react-test-renderer';
+import {Image} from 'react-native';
 
 jest.mock('sn-plugin-lib', () => {
   return {
     PluginCommAPI: {
       insertGeometry: jest.fn().mockResolvedValue({success: true}),
+      getCurrentFilePath: jest.fn().mockResolvedValue({success: true, result: '/note/test.note'}),
+      getCurrentPageNum: jest.fn().mockResolvedValue({success: true, result: 0}),
     },
     PluginFileAPI: {
-      getPageSize: jest.fn().mockResolvedValue({
-        success: true,
-        result: {width: 1404, height: 1872},
-      }),
+      getPageSize: jest.fn().mockResolvedValue({success: true, result: {width: 1404, height: 1872}}),
     },
     PluginManager: {
       closePluginView: jest.fn().mockResolvedValue(true),
@@ -21,7 +21,7 @@ jest.mock('sn-plugin-lib', () => {
 import ShapePalette, {
   TEST_IDS,
   DEFAULT_PAGE_WIDTH,
-  DEFAULT_PAGE_HEIGHT,
+  SHAPE_ICONS,
 } from '../src/ShapePalette';
 import {SHAPES} from '../src/shapes';
 import {PluginCommAPI, PluginManager, PluginFileAPI} from 'sn-plugin-lib';
@@ -40,12 +40,10 @@ function findAllCells(tree: ReactTestRenderer) {
 
 beforeEach(() => {
   (PluginCommAPI.insertGeometry as jest.Mock).mockClear();
-  (PluginManager.closePluginView as jest.Mock).mockClear();
+  (PluginCommAPI.getCurrentFilePath as jest.Mock).mockClear();
+  (PluginCommAPI.getCurrentPageNum as jest.Mock).mockClear();
   (PluginFileAPI.getPageSize as jest.Mock).mockClear();
-  (PluginFileAPI.getPageSize as jest.Mock).mockResolvedValue({
-    success: true,
-    result: {width: DEFAULT_PAGE_WIDTH, height: DEFAULT_PAGE_HEIGHT},
-  });
+  (PluginManager.closePluginView as jest.Mock).mockClear();
 });
 
 describe('ShapePalette', () => {
@@ -57,12 +55,27 @@ describe('ShapePalette', () => {
     expect(tree!.toJSON()).toBeTruthy();
   });
 
+  it('has an icon defined for every shape', () => {
+    SHAPES.forEach(shape => {
+      expect(SHAPE_ICONS).toHaveProperty(shape.id);
+    });
+  });
+
   it('renders a cell for each shape', () => {
     let tree: ReactTestRenderer;
     act(() => {
       tree = create(<ShapePalette />);
     });
     expect(findAllCells(tree!)).toHaveLength(SHAPES.length);
+  });
+
+  it('renders an image thumbnail in each cell', () => {
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+    const images = tree!.root.findAllByType(Image);
+    expect(images).toHaveLength(SHAPES.length);
   });
 
   it('closes plugin when overlay is pressed', async () => {
@@ -72,34 +85,22 @@ describe('ShapePalette', () => {
     });
 
     await act(async () => {
-      findByTestID(tree!, TEST_IDS.overlay).props.onPress();
+      findByTestID(tree!, TEST_IDS.close).props.onPress();
       await flushPromises();
     });
 
     expect(PluginManager.closePluginView).toHaveBeenCalled();
   });
 
-  it('inserts geometry and closes when a shape is tapped', async () => {
-    let tree: ReactTestRenderer;
-    act(() => {
-      tree = create(<ShapePalette />);
-    });
-
-    await act(async () => {
-      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
-      await flushPromises();
-    });
-
-    expect(PluginFileAPI.getPageSize).toHaveBeenCalled();
-    expect(PluginCommAPI.insertGeometry).toHaveBeenCalledWith(
-      expect.objectContaining({penColor: 0x00, penType: 10, penWidth: 2}),
+  it('resolves page size via API chain before inserting', async () => {
+    (PluginCommAPI.getCurrentFilePath as jest.Mock).mockResolvedValueOnce(
+      {success: true, result: '/note/my.note'},
     );
-    expect(PluginManager.closePluginView).toHaveBeenCalled();
-  });
-
-  it('uses default page size when API fails', async () => {
-    (PluginFileAPI.getPageSize as jest.Mock).mockRejectedValueOnce(
-      new Error('unavailable'),
+    (PluginCommAPI.getCurrentPageNum as jest.Mock).mockResolvedValueOnce(
+      {success: true, result: 3},
+    );
+    (PluginFileAPI.getPageSize as jest.Mock).mockResolvedValueOnce(
+      {success: true, result: {width: 1920, height: 2560}},
     );
 
     let tree: ReactTestRenderer;
@@ -112,13 +113,16 @@ describe('ShapePalette', () => {
       await flushPromises();
     });
 
-    expect(PluginCommAPI.insertGeometry).toHaveBeenCalled();
+    expect(PluginCommAPI.getCurrentFilePath).toHaveBeenCalled();
+    expect(PluginCommAPI.getCurrentPageNum).toHaveBeenCalled();
+    expect(PluginFileAPI.getPageSize).toHaveBeenCalledWith('/note/my.note', 3);
+
     const geo = (PluginCommAPI.insertGeometry as jest.Mock).mock.calls[0][0];
     expect(geo.type).toBe('GEO_polygon');
-    const avgX =
-      geo.points.reduce((s: number, p: {x: number}) => s + p.x, 0) /
-      geo.points.length;
-    expect(avgX).toBeCloseTo(DEFAULT_PAGE_WIDTH / 2, -1);
+    const xs = geo.points.map((p: {x: number}) => p.x);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    expect((minX + maxX) / 2).toBeCloseTo(1920 / 2, -1);
   });
 
   it('inserts circle geometry for circle shape', async () => {
@@ -136,6 +140,49 @@ describe('ShapePalette', () => {
     expect(geo.type).toBe('GEO_circle');
     expect(geo.ellipseCenterPoint).toBeDefined();
     expect(geo.ellipseMajorAxisRadius).toBe(geo.ellipseMinorAxisRadius);
+  });
+
+  it('falls back to defaults when getCurrentFilePath fails', async () => {
+    (PluginCommAPI.getCurrentFilePath as jest.Mock).mockRejectedValueOnce(
+      new Error('unavailable'),
+    );
+
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
+      await flushPromises();
+    });
+
+    expect(PluginFileAPI.getPageSize).not.toHaveBeenCalled();
+    expect(PluginCommAPI.insertGeometry).toHaveBeenCalled();
+    const geo = (PluginCommAPI.insertGeometry as jest.Mock).mock.calls[0][0];
+    const xs = geo.points.map((p: {x: number}) => p.x);
+    expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(DEFAULT_PAGE_WIDTH / 2, -1);
+  });
+
+  it('falls back to defaults when getPageSize fails', async () => {
+    (PluginFileAPI.getPageSize as jest.Mock).mockRejectedValueOnce(
+      new Error('unavailable'),
+    );
+
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
+      await flushPromises();
+    });
+
+    expect(PluginCommAPI.insertGeometry).toHaveBeenCalled();
+    const geo = (PluginCommAPI.insertGeometry as jest.Mock).mock.calls[0][0];
+    const xs = geo.points.map((p: {x: number}) => p.x);
+    expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(DEFAULT_PAGE_WIDTH / 2, -1);
   });
 
   it('ignores rapid double-tap while insertion is in progress', async () => {

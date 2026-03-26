@@ -38,7 +38,7 @@ export type Shape = {
 const PEN_DEFAULTS: PenStyle = {
   penColor: 0x00,
   penType: 10,
-  penWidth: 2,
+  penWidth: 200,
 };
 
 export function regularPolygon(
@@ -96,7 +96,8 @@ export function starPoints(
 }
 
 function makePolygon(points: Point[]): PolygonGeometry {
-  return {...PEN_DEFAULTS, type: 'GEO_polygon', points};
+  const closed = [...points, points[0]];
+  return {...PEN_DEFAULTS, type: 'GEO_polygon', points: closed};
 }
 
 function makeCircle(center: Point, radius: number): CircleGeometry {
@@ -165,12 +166,6 @@ export const SHAPES: Shape[] = [
     label,
     build: (center, size) => makePolygon(regularPolygon(center, size / 2, sides)),
   })),
-  {
-    id: 'star6',
-    label: 'Star',
-    build: (center, size) =>
-      makePolygon(starPoints(center, size / 2, size / 4, 6)),
-  },
   {
     id: 'parallelogram',
     label: 'Parallelogram',

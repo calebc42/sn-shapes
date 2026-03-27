@@ -27,7 +27,12 @@ export type EllipseGeometry = PenStyle & {
   ellipseAngle: number;
 };
 
-export type Geometry = PolygonGeometry | CircleGeometry | EllipseGeometry;
+export type LineGeometry = PenStyle & {
+  type: 'straightLine';
+  points: Point[];
+};
+
+export type Geometry = PolygonGeometry | CircleGeometry | EllipseGeometry | LineGeometry;
 
 export type Shape = {
   id: string;
@@ -38,7 +43,7 @@ export type Shape = {
 const PEN_DEFAULTS: PenStyle = {
   penColor: 0x00,
   penType: 10,
-  penWidth: 200,
+  penWidth: 400,
 };
 
 export function regularPolygon(
@@ -166,6 +171,21 @@ export const SHAPES: Shape[] = [
     label,
     build: (center, size) => makePolygon(regularPolygon(center, size / 2, sides)),
   })),
+  {
+    id: 'line',
+    label: 'Line',
+    build: (center, size) => {
+      const h = size / 2;
+      return {
+        ...PEN_DEFAULTS,
+        type: 'straightLine' as const,
+        points: [
+          {x: center.x - h, y: center.y},
+          {x: center.x + h, y: center.y},
+        ],
+      };
+    },
+  },
   {
     id: 'parallelogram',
     label: 'Parallelogram',

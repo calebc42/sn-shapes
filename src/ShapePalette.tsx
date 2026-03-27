@@ -30,6 +30,7 @@ export const SHAPE_ICONS: Record<string, ImageSourcePropType> = {
   hexagon: require('../assets/shapes/shape_hexagon.png'),
   heptagon: require('../assets/shapes/shape_heptagon.png'),
   octagon: require('../assets/shapes/shape_octagon.png'),
+  line: require('../assets/shapes/shape_line.png'),
   parallelogram: require('../assets/shapes/shape_parallelogram.png'),
 };
 

@@ -16,7 +16,7 @@ const SIZE = 200;
 function expectPenDefaults(geo: Geometry) {
   expect(geo.penColor).toBe(0x00);
   expect(geo.penType).toBe(10);
-  expect(geo.penWidth).toBe(200);
+  expect(geo.penWidth).toBe(400);
 }
 
 function assertPolygon(geo: Geometry): asserts geo is PolygonGeometry {
@@ -122,8 +122,8 @@ describe('starPoints', () => {
 });
 
 describe('SHAPES', () => {
-  it('contains 11 shapes', () => {
-    expect(SHAPES).toHaveLength(11);
+  it('contains 12 shapes', () => {
+    expect(SHAPES).toHaveLength(12);
   });
 
   it('each shape has a unique id', () => {
@@ -148,6 +148,9 @@ describe('SHAPES', () => {
       switch (geo.type) {
         case 'GEO_polygon':
           expect(geo.points.length).toBeGreaterThanOrEqual(3);
+          break;
+        case 'straightLine':
+          expect(geo.points).toHaveLength(2);
           break;
         case 'GEO_circle':
         case 'GEO_ellipse':

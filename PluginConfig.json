@@ -1,0 +1,10 @@
+{
+  "name": "Shapes",
+  "desc": "Insert geometric shapes into notes",
+  "iconPath": "assets/icon.png",
+  "versionName": "0.0.1",
+  "versionCode": "1",
+  "pluginID": "ismudkearvzd5ffx",
+  "pluginKey": "SnShapes",
+  "jsMainPath": "index"
+}

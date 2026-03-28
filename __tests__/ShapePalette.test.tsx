@@ -87,6 +87,20 @@ describe('ShapePalette', () => {
     expect(images).toHaveLength(SHAPES.length);
   });
 
+  it('closes plugin view when overlay is pressed', async () => {
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.overlay).props.onPress();
+      await flushPromises();
+    });
+
+    expect(PluginManager.closePluginView).toHaveBeenCalled();
+  });
+
   it('closes plugin view after successful shape insertion', async () => {
     let tree: ReactTestRenderer;
     act(() => {

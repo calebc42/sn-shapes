@@ -15,7 +15,8 @@ export const DEFAULT_PAGE_HEIGHT = 1872;
 export const SHAPE_SIZE_RATIO = 0.12;
 
 export const TEST_IDS = {
-  cell: (id: string) => `shape-cell-${id}`,
+  overlay: 'shapes-overlay',
+  cell: (id: ShapeId) => `shape-cell-${id}`,
   error: 'shapes-error',
 } as const;
 
@@ -100,13 +101,19 @@ export default function ShapePalette() {
     }
   }, []);
 
+  const handleOverlayPress = useCallback(() => {
+    if (!insertingRef.current) {
+      PluginManager.closePluginView();
+    }
+  }, []);
+
   const rows: Shape[][] = [];
   for (let i = 0; i < SHAPES.length; i += COLS) {
     rows.push(SHAPES.slice(i, i + COLS));
   }
 
   return (
-    <View style={styles.container}>
+    <Pressable testID={TEST_IDS.overlay} style={styles.container} onPress={handleOverlayPress}>
       <View style={styles.panel}>
         {error && (
           <View testID={TEST_IDS.error} style={styles.errorBanner}>
@@ -130,7 +137,7 @@ export default function ShapePalette() {
           </View>
         ))}
       </View>
-    </View>
+    </Pressable>
   );
 }
 

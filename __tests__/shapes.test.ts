@@ -2,7 +2,6 @@ import {
   SHAPES,
   regularPolygon,
   roundedRectPoints,
-  starPoints,
   Point,
   Geometry,
   PolygonGeometry,
@@ -96,28 +95,6 @@ describe('roundedRectPoints', () => {
       expect(p.y).toBeGreaterThanOrEqual(CENTER.y - hh - 0.01);
       expect(p.y).toBeLessThanOrEqual(CENTER.y + hh + 0.01);
     });
-  });
-});
-
-describe('starPoints', () => {
-  it('generates 2x tip count points', () => {
-    expect(starPoints(CENTER, 50, 25, 6)).toHaveLength(12);
-    expect(starPoints(CENTER, 50, 25, 5)).toHaveLength(10);
-  });
-
-  it('alternates between outer and inner radii', () => {
-    const points = starPoints(CENTER, 50, 25, 6);
-    points.forEach((p, i) => {
-      const dist = Math.sqrt((p.x - CENTER.x) ** 2 + (p.y - CENTER.y) ** 2);
-      const expected = i % 2 === 0 ? 50 : 25;
-      expect(dist).toBeCloseTo(expected, 5);
-    });
-  });
-
-  it('first point is at top (startAngle -PI/2)', () => {
-    const points = starPoints(CENTER, 50, 25, 6);
-    expect(points[0].x).toBeCloseTo(CENTER.x);
-    expect(points[0].y).toBeCloseTo(CENTER.y - 50);
   });
 });
 

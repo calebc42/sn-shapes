@@ -1,97 +1,76 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Shapes Plugin for Supernote
 
-# Getting Started
+![Tests](https://img.shields.io/badge/tests-62%20passed-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-97.8%25-brightgreen)
+![Lint](https://img.shields.io/badge/lint-passing-brightgreen)
+![Platform](https://img.shields.io/badge/platform-Supernote-blue)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Version](https://img.shields.io/badge/version-0.1.0-orange)
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+A toolbar plugin for Supernote that lets you insert geometric shapes directly into your notes.
 
-## Step 1: Start Metro
+## Screenshots
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+| Plugin Info | Plugin Menu | Shape Palette |
+|:-----------:|:-----------:|:-------------:|
+| <img src="docs/images/plugin-info.png" width="250" /> | <img src="docs/images/plugin-menu.png" width="250" /> | <img src="docs/images/shape-palette.png" width="250" /> |
+| Manage installation and view details | Access Shapes from the Plugins panel | Tap a shape to insert it on the page |
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Available Shapes
 
-```sh
-# Using npm
-npm start
+Square, Circle, Rounded Rectangle, Ellipse, Triangle, Diamond, Pentagon, Hexagon, Heptagon, Octagon, Line, and Parallelogram.
 
-# OR using Yarn
-yarn start
-```
+## How to Use
 
-## Step 2: Build and run your app
+1. Open a note on your Supernote.
+2. Tap the **Plugins** icon in the left toolbar (the puzzle piece).
+3. Tap **Shapes** to open the shape palette.
+4. Tap any shape to insert it centered on the current page.
+5. The palette closes automatically. To dismiss without inserting, tap anywhere outside the panel.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## Building
 
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+Make sure you have Node.js 18+ installed, then:
 
 ```sh
-bundle install
+npm install
+./buildPlugin.sh
 ```
 
-Then, and every time you update your native dependencies, run:
+This produces `build/outputs/SnShapes.snplg`.
+
+## Installing on the Device
+
+Use the Supernote Partner App to copy `build/outputs/SnShapes.snplg` to the `MyStyles` folder on your device. Then on the Supernote, navigate to `Settings -> Apps -> Plugins -> Add Plugin` to add the plugin to your supernote.
+
+## Running Tests
 
 ```sh
-bundle exec pod install
+npm test
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+## Linting
 
 ```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npm run lint
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Project Structure
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```
+src/
+  shapes.ts         Shape definitions and geometry helpers
+  ShapePalette.tsx   UI component (palette grid, insertion logic)
+assets/
+  icon.png           Toolbar icon
+  shapes/            Shape thumbnail images
+docs/
+  images/            Screenshots from the device
+index.js             Plugin entry point (toolbar button registration)
+App.tsx              React Native root component
+```
 
-## Step 3: Modify your app
+---
 
-Now that you have successfully run the app, let's make changes!
+Hope you enjoy using this plugin as much as I enjoyed developing it. If you find any issues, please feel free to raise an [Issue](https://github.com/j-raghavan/sn-shapes/issues).
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.

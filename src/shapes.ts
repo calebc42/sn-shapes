@@ -34,8 +34,22 @@ export type LineGeometry = PenStyle & {
 
 export type Geometry = PolygonGeometry | CircleGeometry | EllipseGeometry | LineGeometry;
 
+export type ShapeId =
+  | 'square'
+  | 'circle'
+  | 'roundedRect'
+  | 'ellipse'
+  | 'triangle'
+  | 'diamond'
+  | 'pentagon'
+  | 'hexagon'
+  | 'heptagon'
+  | 'octagon'
+  | 'line'
+  | 'parallelogram';
+
 export type Shape = {
-  id: string;
+  id: ShapeId;
   label: string;
   build: (center: Point, size: number) => Geometry;
 };
@@ -82,22 +96,6 @@ export function roundedRectPoints(
       return {x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle)};
     }),
   );
-}
-
-export function starPoints(
-  center: Point,
-  outerRadius: number,
-  innerRadius: number,
-  tips: number,
-): Point[] {
-  return Array.from({length: tips * 2}, (_, i) => {
-    const radius = i % 2 === 0 ? outerRadius : innerRadius;
-    const angle = -Math.PI / 2 + (Math.PI * i) / tips;
-    return {
-      x: center.x + radius * Math.cos(angle),
-      y: center.y + radius * Math.sin(angle),
-    };
-  });
 }
 
 function makePolygon(points: Point[]): PolygonGeometry {

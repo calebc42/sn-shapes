@@ -27,7 +27,7 @@ import {SHAPES} from '../src/shapes';
 import {PluginCommAPI, PluginManager, PluginFileAPI} from 'sn-plugin-lib';
 
 function flushPromises() {
-  return new Promise(resolve => setImmediate(resolve));
+  return new Promise(resolve => jest.requireActual<typeof globalThis>('timers').setImmediate(resolve));
 }
 
 function findByTestID(tree: ReactTestRenderer, testID: string) {
@@ -38,12 +38,21 @@ function findAllCells(tree: ReactTestRenderer) {
   return SHAPES.map(s => findByTestID(tree, TEST_IDS.cell(s.id)));
 }
 
+let consoleErrorSpy: jest.SpyInstance;
+
 beforeEach(() => {
+  jest.useFakeTimers();
   (PluginCommAPI.insertGeometry as jest.Mock).mockClear();
   (PluginCommAPI.getCurrentFilePath as jest.Mock).mockClear();
   (PluginCommAPI.getCurrentPageNum as jest.Mock).mockClear();
   (PluginFileAPI.getPageSize as jest.Mock).mockClear();
   (PluginManager.closePluginView as jest.Mock).mockClear();
+  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+  consoleErrorSpy.mockRestore();
 });
 
 describe('ShapePalette', () => {
@@ -78,18 +87,118 @@ describe('ShapePalette', () => {
     expect(images).toHaveLength(SHAPES.length);
   });
 
-  it('closes plugin when overlay is pressed', async () => {
+  it('closes plugin view when overlay is pressed', async () => {
     let tree: ReactTestRenderer;
     act(() => {
       tree = create(<ShapePalette />);
     });
 
     await act(async () => {
-      findByTestID(tree!, TEST_IDS.close).props.onPress();
+      findByTestID(tree!, TEST_IDS.overlay).props.onPress();
       await flushPromises();
     });
 
     expect(PluginManager.closePluginView).toHaveBeenCalled();
+  });
+
+  it('closes plugin view after successful shape insertion', async () => {
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
+      await flushPromises();
+    });
+
+    expect(PluginCommAPI.insertGeometry).toHaveBeenCalled();
+    expect(PluginManager.closePluginView).toHaveBeenCalled();
+  });
+
+  it('does not close plugin view when insertion fails and shows error banner', async () => {
+    (PluginCommAPI.insertGeometry as jest.Mock).mockRejectedValueOnce(
+      new Error('failed'),
+    );
+
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
+      await flushPromises();
+    });
+
+    expect(PluginManager.closePluginView).not.toHaveBeenCalled();
+    const errorBanner = findByTestID(tree!, TEST_IDS.error);
+    expect(errorBanner).toBeTruthy();
+  });
+
+  it('does not show error banner after successful insertion', async () => {
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
+      await flushPromises();
+    });
+
+    expect(() => findByTestID(tree!, TEST_IDS.error)).toThrow();
+  });
+
+  it('clears error banner on successful retry', async () => {
+    (PluginCommAPI.insertGeometry as jest.Mock).mockRejectedValueOnce(
+      new Error('failed'),
+    );
+
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
+      await flushPromises();
+    });
+
+    expect(findByTestID(tree!, TEST_IDS.error)).toBeTruthy();
+
+    (PluginCommAPI.insertGeometry as jest.Mock).mockResolvedValueOnce({success: true});
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('circle')).props.onPress();
+      await flushPromises();
+    });
+
+    expect(() => findByTestID(tree!, TEST_IDS.error)).toThrow();
+  });
+
+  it('auto-dismisses error banner after timeout', async () => {
+    (PluginCommAPI.insertGeometry as jest.Mock).mockRejectedValueOnce(
+      new Error('failed'),
+    );
+
+    let tree: ReactTestRenderer;
+    act(() => {
+      tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
+      await flushPromises();
+    });
+
+    expect(findByTestID(tree!, TEST_IDS.error)).toBeTruthy();
+
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(() => findByTestID(tree!, TEST_IDS.error)).toThrow();
   });
 
   it('resolves page size via API chain before inserting', async () => {

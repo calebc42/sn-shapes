@@ -1,6 +1,6 @@
 {
   "name": "Shapes",
-  "desc": "Insert geometric shapes into notes",
+  "desc": "Quickly add beautifully centered shapes to your notes: squares, circles, triangles, polygons, and more. Just tap a shape and it's placed right on the page for you.",
   "iconPath": "assets/icon.png",
   "versionName": "0.0.1",
   "versionCode": "1",

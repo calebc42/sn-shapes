@@ -1,7 +1,7 @@
-import React, {useCallback, useRef} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {View, Image, Text, Pressable, StyleSheet, ImageSourcePropType} from 'react-native';
 import {PluginCommAPI, PluginManager, PluginFileAPI} from 'sn-plugin-lib';
-import {SHAPES, Shape} from './shapes';
+import {SHAPES, Shape, ShapeId} from './shapes';
 
 const COLS = 3;
 export const CELL_SIZE = 48;
@@ -15,11 +15,11 @@ export const DEFAULT_PAGE_HEIGHT = 1872;
 export const SHAPE_SIZE_RATIO = 0.12;
 
 export const TEST_IDS = {
-  close: 'shapes-close',
   cell: (id: string) => `shape-cell-${id}`,
+  error: 'shapes-error',
 } as const;
 
-export const SHAPE_ICONS: Record<string, ImageSourcePropType> = {
+export const SHAPE_ICONS: Record<ShapeId, ImageSourcePropType> = {
   square: require('../assets/shapes/shape_square.png'),
   circle: require('../assets/shapes/shape_circle.png'),
   roundedRect: require('../assets/shapes/shape_roundedRect.png'),
@@ -62,25 +62,42 @@ async function insertShape(shape: Shape): Promise<void> {
   }
 }
 
+const ERROR_DISPLAY_MS = 2000;
+
 export default function ShapePalette() {
   const insertingRef = useRef(false);
+  const [error, setError] = useState<string | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleShapeTap = useCallback(async (shape: Shape) => {
     if (insertingRef.current) {
       return;
     }
     insertingRef.current = true;
+    setError(null);
+    if (errorTimerRef.current) {
+      clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = null;
+    }
     try {
       await insertShape(shape);
+      PluginManager.closePluginView();
     } catch (e) {
-      console.error('Shape insertion error:', e);
+      const message =
+        e instanceof Error ? e.message : 'Insert failed';
+      setError(message);
+      errorTimerRef.current = setTimeout(() => setError(null), ERROR_DISPLAY_MS);
     } finally {
       insertingRef.current = false;
     }
-  }, []);
-
-  const handleClose = useCallback(() => {
-    PluginManager.closePluginView();
   }, []);
 
   const rows: Shape[][] = [];
@@ -91,14 +108,11 @@ export default function ShapePalette() {
   return (
     <View style={styles.container}>
       <View style={styles.panel}>
-        <View style={styles.header}>
-          <Pressable
-            testID={TEST_IDS.close}
-            style={styles.closeButton}
-            onPress={handleClose}>
-            <Text style={styles.closeText}>✕</Text>
-          </Pressable>
-        </View>
+        {error && (
+          <View testID={TEST_IDS.error} style={styles.errorBanner}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
         {rows.map((row, rowIdx) => (
           <View key={rowIdx} style={styles.row}>
             {row.map(shape => (
@@ -139,20 +153,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 4,
+  errorBanner: {
+    backgroundColor: '#D9534F',
+    borderRadius: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginBottom: GAP,
   },
-  closeButton: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeText: {
-    fontSize: 14,
-    color: '#666',
+  errorText: {
+    color: '#FFF',
+    fontSize: 11,
+    textAlign: 'center',
   },
   row: {
     flexDirection: 'row',

@@ -37,7 +37,7 @@ export const TEST_IDS = {
 } as const;
 
 export const SHAPE_ICONS: Record<ShapeId, ImageSourcePropType> = {
-  square: require('../assets/shapes/shape_square.png'),
+  rectangle: require('../assets/shapes/shape_square.png'),
   circle: require('../assets/shapes/shape_circle.png'),
   roundedRect: require('../assets/shapes/shape_roundedRect.png'),
   ellipse: require('../assets/shapes/shape_ellipse.png'),

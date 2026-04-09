@@ -35,7 +35,7 @@ export type LineGeometry = PenStyle & {
 export type Geometry = PolygonGeometry | CircleGeometry | EllipseGeometry | LineGeometry;
 
 export type ShapeId =
-  | 'square'
+  | 'rectangle'
   | 'circle'
   | 'roundedRect'
   | 'ellipse'
@@ -55,7 +55,7 @@ export type ShapeParameter = {
   readonly min?: number;
   readonly max?: number;
   readonly step?: number;
-  readonly unit?: 'px' | 'deg' | '%';
+  readonly unit: 'px' | 'deg' | '%';
 };
 
 export type Shape = {
@@ -77,6 +77,7 @@ export function regularPolygon(
   sides: number,
   startAngle = -Math.PI / 2,
 ): Point[] {
+  if (sides < 3) throw new Error(`regularPolygon requires at least 3 sides, got ${sides}`);
   return Array.from({length: sides}, (_, i) => {
     const angle = startAngle + (2 * Math.PI * i) / sides;
     return {
@@ -109,14 +110,18 @@ export function roundedRectPoints(
   );
 }
 
-function makePolygon(points: Point[]): PolygonGeometry {
-  const closed = [...points, points[0]];
-  return {...PEN_DEFAULTS, type: 'GEO_polygon', points: closed};
+function makeLine(p1: Point, p2: Point, style: PenStyle): LineGeometry {
+  return {...style, type: 'straightLine', points: [p1, p2]};
 }
 
-function makeCircle(center: Point, radius: number): CircleGeometry {
+function makePolygon(points: Point[], style: PenStyle): PolygonGeometry {
+  const closed = [...points, points[0]];
+  return {...style, type: 'GEO_polygon', points: closed};
+}
+
+function makeCircle(center: Point, radius: number, style: PenStyle): CircleGeometry {
   return {
-    ...PEN_DEFAULTS,
+    ...style,
     type: 'GEO_circle',
     ellipseCenterPoint: center,
     ellipseMajorAxisRadius: radius,
@@ -125,13 +130,13 @@ function makeCircle(center: Point, radius: number): CircleGeometry {
   };
 }
 
-function makeEllipse(center: Point, rx: number, ry: number): EllipseGeometry {
+function makeEllipse(center: Point, radiusX: number, radiusY: number, style: PenStyle): EllipseGeometry {
   return {
-    ...PEN_DEFAULTS,
+    ...style,
     type: 'GEO_ellipse',
     ellipseCenterPoint: center,
-    ellipseMajorAxisRadius: rx,
-    ellipseMinorAxisRadius: ry,
+    ellipseMajorAxisRadius: radiusX,
+    ellipseMinorAxisRadius: radiusY,
     ellipseAngle: 0,
   };
 }
@@ -147,67 +152,192 @@ const REGULAR_POLYGONS = [
 
 export const SHAPES: Shape[] = [
   {
-    id: 'square',
-    label: 'Square',
-    build: (center, size) => {
-      const h = size / 2;
-      return makePolygon([
-        {x: center.x - h, y: center.y - h},
-        {x: center.x + h, y: center.y - h},
-        {x: center.x + h, y: center.y + h},
-        {x: center.x - h, y: center.y + h},
-      ]);
+    id: 'rectangle',
+    label: 'Rectangle',
+    parameters: [
+      { id: 'width',
+        label: 'Width (px)',
+        defaultValue: 200,
+        min: 1,
+        unit: 'px'
+      },
+      { id: 'height',
+        label: 'Height (px)',
+        defaultValue: 200,
+        min: 1,
+        unit: 'px'
+      },
+    ],
+    build: (center, params, style) => {
+      const hw = params.width / 2;
+      const hh = params.height / 2;
+      return makePolygon(
+        [
+          {x: center.x - h, y: center.y - h},
+          {x: center.x + h, y: center.y - h},
+          {x: center.x + h, y: center.y + h},
+          {x: center.x - h, y: center.y + h},
+        ],
+        style,
+      );
     },
   },
+
   {
     id: 'circle',
     label: 'Circle',
-    build: (center, size) => makeCircle(center, size / 2),
+    parameters: [
+      { id: `radius`,
+        label: 'Radius (px)',
+        defaultValue: 100,
+        min: 1,
+        unit: 'px'
+      },
+    ],
+    build: (center, params, style) => makeCircle(center, params.radius, style),
   },
+  
   {
     id: 'roundedRect',
     label: 'Rounded Rectangle',
-    build: (center, size) =>
-      makePolygon(roundedRectPoints(center, size / 2, size / 3, size / 8)),
+    parameters: [
+      { id: 'width',
+        label: 'Width (px)',
+        defaultValue: 200,
+        min: 1,
+        unit: 'px'
+      },
+      { id: 'height',
+        label: 'Height (px)',
+        defaultValue: 200,
+        min: 1,
+        unit: 'px'
+      },
+      { id: 'cornerRadius',
+        label: 'Corner Radius (px)',
+        defaultValue: 25,
+        min: 1,
+        unit: 'px'
+      },
+    ],
+    build: (center, params, style) =>
+      makePolygon(
+        roundedRectPoints(
+          center,
+          params.width,
+          params.height,
+          params.cornerRadius
+        ),
+        style
+      ),
   },
+  
   {
     id: 'ellipse',
     label: 'Ellipse',
-    build: (center, size) => makeEllipse(center, size / 2, size / 3),
+    parameters: [
+      { id: 'radiusX',
+        label: 'Radius X (px)',
+        defaultValue: 150,
+        min: 1,
+        unit: 'px'
+      },
+      { id: 'radiusY',
+        label: 'Radius Y (px)',
+        defaultValue: 100,
+        min: 1,
+        unit: 'px'
+      },
+    ],
+    build: (center, params, style) => makeEllipse(center, params.radiusX, params.radiusY, style),
   },
-  ...REGULAR_POLYGONS.map(([id, label, sides]): Shape => ({
-    id,
-    label,
-    build: (center, size) => makePolygon(regularPolygon(center, size / 2, sides)),
-  })),
+  
   {
     id: 'line',
     label: 'Line',
-    build: (center, size) => {
-      const h = size / 2;
-      return {
-        ...PEN_DEFAULTS,
-        type: 'straightLine' as const,
-        points: [
-          {x: center.x - h, y: center.y},
-          {x: center.x + h, y: center.y},
-        ],
-      };
+    parameters: [
+      { id: 'length',
+        label: 'Length (px)',
+        defaultValue: 200,
+        min: 1,
+        unit: 'px'
+      },
+      { id: 'angle',
+        label: 'Angle (degrees)',
+        defaultValue: 0,
+        unit: "deg"
+      },
+    ],
+    build: (center, params, style) => {
+      const rad = (params.angle * Math.PI) / 180;
+      const hl = params.length / 2;
+      const dx = Math.cos(rad) * hl;
+      const dy = Math.sin(rad) * hl;
+      return makeLine(
+        { x: center.x - dx, y: center.y - dy },
+        { x: center.x + dx, y: center.y + dy },
+        style,
+      );
     },
   },
+  
   {
     id: 'parallelogram',
     label: 'Parallelogram',
-    build: (center, size) => {
-      const hw = size / 2;
-      const hh = size / 3;
-      const s = size / 10;
-      return makePolygon([
-        {x: center.x - hw + s, y: center.y - hh},
-        {x: center.x + hw + s, y: center.y - hh},
-        {x: center.x + hw - s, y: center.y + hh},
-        {x: center.x - hw - s, y: center.y + hh},
-      ]);
+    parameters: [
+      { id: 'width',
+        label: 'Width (px)',
+        defaultValue: 200,
+        min: 1,
+        unit: 'px'
+      },
+      { id: 'height',
+        label: 'Height (px)',
+        defaultValue: 150,
+        min: 1,
+        unit: 'px'
+      },
+      { id: 'offset',
+        label: 'Offset',
+        defaultValue: 50,
+        unit: 'px'
+        // Can be negative for left-lean
+      },
+    ],
+    build: (center, params, style) => {
+      const hw = params.width / 2;
+      const hh = params.height / 2;
+      const off = params.offset;
+      return makePolygon(
+        [
+          { x: center.x - hw + off, y: center.y - hh },
+          { x: center.x + hw + off, y: center.y - hh },
+          { x: center.x + hw - off, y: center.y + hh },
+          { x: center.x - hw - off, y: center.y + hh },
+        ],
+        style
+      );
     },
   },
+
+  ...REGULAR_POLYGONS.map(([id, label, sides]): Shape => ({
+    id,
+    label,
+    parameters: [
+      { id: 'radius',
+        label: 'Radius (px)',
+        defaultValue: 100,
+        min: 1,
+        unit: 'px'
+      },
+    ],
+    build: (center, params, style) => makePolygon(
+      regularPolygon(
+        center,
+        params.radius,
+        sides
+      ),
+      style
+    ),
+  })),
 ];

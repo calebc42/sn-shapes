@@ -48,10 +48,21 @@ export type ShapeId =
   | 'line'
   | 'parallelogram';
 
+export type ShapeParameter = {
+  readonly id: string;
+  readonly label: string;
+  readonly defaultValue: number;
+  readonly min?: number;
+  readonly max?: number;
+  readonly step?: number;
+  readonly unit?: 'px' | 'deg' | '%';
+};
+
 export type Shape = {
-  id: ShapeId;
-  label: string;
-  build: (center: Point, size: number) => Geometry;
+  readonly id: ShapeId;
+  readonly label: string;
+  readonly parameters: readonly ShapeParameter[];
+  build: (center: Point, params: Record<string, number>, style: PenStyle) => Geometry;
 };
 
 const PEN_DEFAULTS: PenStyle = {

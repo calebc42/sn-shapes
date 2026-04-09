@@ -98,7 +98,7 @@ export default function ShapePalette() {
     };
   }, []);
 
-  const layout = computeLayout(pageWidth);
+const layout = computeLayout(pageWidth);
 
   const handleShapeTap = useCallback(async (shape: Shape) => {
     if (insertingRef.current) return;

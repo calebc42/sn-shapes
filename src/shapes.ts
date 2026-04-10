@@ -1,6 +1,6 @@
 export type Point = {x: number; y: number};
 
-type PenStyle = {
+export type PenStyle = {
   penColor: number;
   penType: number;
   penWidth: number;
@@ -65,7 +65,7 @@ export type Shape = {
   build: (center: Point, params: Record<string, number>, style: PenStyle) => Geometry;
 };
 
-const PEN_DEFAULTS: PenStyle = {
+export const PEN_DEFAULTS: PenStyle = {
   penColor: 0x00,
   penType: 10,
   penWidth: 400,
@@ -173,10 +173,10 @@ export const SHAPES: Shape[] = [
       const hh = params.height / 2;
       return makePolygon(
         [
-          {x: center.x - h, y: center.y - h},
-          {x: center.x + h, y: center.y - h},
-          {x: center.x + h, y: center.y + h},
-          {x: center.x - h, y: center.y + h},
+          {x: center.x - hw, y: center.y - hh},
+          {x: center.x + hw, y: center.y - hh},
+          {x: center.x + hw, y: center.y + hh},
+          {x: center.x - hw, y: center.y + hh},
         ],
         style,
       );
@@ -194,26 +194,33 @@ export const SHAPES: Shape[] = [
         unit: 'px'
       },
     ],
-    build: (center, params, style) => makeCircle(center, params.radius, style),
+    build: (center, params, style) => makeCircle(
+      center,
+      params.radius,
+      style
+    ),
   },
-  
+
   {
     id: 'roundedRect',
     label: 'Rounded Rectangle',
     parameters: [
-      { id: 'width',
+      {
+        id: 'width',
         label: 'Width (px)',
         defaultValue: 200,
         min: 1,
         unit: 'px'
       },
-      { id: 'height',
+      {
+        id: 'height',
         label: 'Height (px)',
         defaultValue: 200,
         min: 1,
         unit: 'px'
       },
-      { id: 'cornerRadius',
+      {
+        id: 'cornerRadius',
         label: 'Corner Radius (px)',
         defaultValue: 25,
         min: 1,
@@ -224,8 +231,8 @@ export const SHAPES: Shape[] = [
       makePolygon(
         roundedRectPoints(
           center,
-          params.width,
-          params.height,
+          params.width / 2,
+          params.height / 2,
           params.cornerRadius
         ),
         style
@@ -236,13 +243,15 @@ export const SHAPES: Shape[] = [
     id: 'ellipse',
     label: 'Ellipse',
     parameters: [
-      { id: 'radiusX',
+      {
+        id: 'radiusX',
         label: 'Radius X (px)',
         defaultValue: 150,
         min: 1,
         unit: 'px'
       },
-      { id: 'radiusY',
+      {
+        id: 'radiusY',
         label: 'Radius Y (px)',
         defaultValue: 100,
         min: 1,
@@ -256,13 +265,15 @@ export const SHAPES: Shape[] = [
     id: 'line',
     label: 'Line',
     parameters: [
-      { id: 'length',
+      {
+        id: 'length',
         label: 'Length (px)',
         defaultValue: 200,
         min: 1,
         unit: 'px'
       },
-      { id: 'angle',
+      {
+        id: 'angle',
         label: 'Angle (degrees)',
         defaultValue: 0,
         unit: "deg"
@@ -285,19 +296,22 @@ export const SHAPES: Shape[] = [
     id: 'parallelogram',
     label: 'Parallelogram',
     parameters: [
-      { id: 'width',
+      {
+        id: 'width',
         label: 'Width (px)',
         defaultValue: 200,
         min: 1,
         unit: 'px'
       },
-      { id: 'height',
+      {
+        id: 'height',
         label: 'Height (px)',
         defaultValue: 150,
         min: 1,
         unit: 'px'
       },
-      { id: 'offset',
+      {
+        id: 'offset',
         label: 'Offset',
         defaultValue: 50,
         unit: 'px'
@@ -324,18 +338,26 @@ export const SHAPES: Shape[] = [
     id,
     label,
     parameters: [
-      { id: 'radius',
+      {
+        id: 'radius',
         label: 'Radius (px)',
         defaultValue: 100,
         min: 1,
         unit: 'px'
+      },
+      {
+        id: 'rotation',
+        label: 'Rotation (deg)',
+        defaultValue: 0,
+        unit: 'deg',
       },
     ],
     build: (center, params, style) => makePolygon(
       regularPolygon(
         center,
         params.radius,
-        sides
+        sides,
+          -Math.PI / 2 + (params.rotation * Math.PI) / 180,
       ),
       style
     ),

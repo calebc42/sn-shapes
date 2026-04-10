@@ -153,9 +153,17 @@ export default function ShapePalette() {
     rows.push(SHAPES.slice(i, i + COLS));
   }
 
+  const SidebarNode = () => (
+    <View style={styles.nodeContainer}>
+      <View style={styles.nodeDot} />
+      <View style={styles.nodeLine} />
+    </View>
+  );
+
   return (
     <Pressable testID={TEST_IDS.overlay} style={styles.container} onPress={handleOverlayPress}>
       <Pressable style={[styles.panel, { width: layout.panelWidth }]} onPress={e => e.stopPropagation()}>
+        <SidebarNode />
         <View style={styles.panelHeaderRow}>
           <Text style={styles.panelTitle}>Shapes</Text>
           <Pressable
@@ -220,16 +228,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: 'transparent',
   },
   panel: {
     marginLeft: 90,
+    top: '50%',
+    transform: [{ translateY: -59 }],
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#000000',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   panelHeaderRow: {
     paddingHorizontal: PANEL_PADDING,
@@ -364,5 +374,24 @@ const styles = StyleSheet.create({
   },
   thumbnail: {
     resizeMode: 'contain',
+  },
+  nodeContainer: {
+    position: 'absolute',
+    left: -22, // Sits in the gap between toolbar and panel
+    top: 24,   // Centers vertically with the "Shapes" title
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  nodeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#000000', // Pure black for e-ink
+  },
+  nodeLine: {
+    width: 12, // Short bridge from dot to panel border
+    height: 1.5,
+    backgroundColor: '#000000',
   },
 });

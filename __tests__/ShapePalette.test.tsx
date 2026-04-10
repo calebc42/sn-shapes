@@ -27,7 +27,7 @@ import {SHAPES} from '../src/shapes';
 import {PluginCommAPI, PluginManager, PluginFileAPI} from 'sn-plugin-lib';
 
 function flushPromises() {
-  return new Promise(resolve => 
+  return new Promise(resolve =>
     jest.requireActual<typeof globalThis>('timers').setImmediate(resolve)
   );
 }
@@ -202,14 +202,14 @@ describe('ShapePalette', () => {
 
     // Advance the fake clock past your banner's timeout duration
     act(() => {
-      jest.advanceTimersByTime(5000); 
+      jest.advanceTimersByTime(5000);
     });
 
     // The banner should now be gone
     expect(() => findByTestID(tree!, TEST_IDS.error)).toThrow();
 
     // CRITICAL: Restore real timers so the next tests don't freeze!
-    jest.useRealTimers(); 
+    jest.useRealTimers();
   });
 
   it('resolves page size via API chain before inserting', async () => {

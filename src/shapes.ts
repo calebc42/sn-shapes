@@ -77,7 +77,7 @@ export function regularPolygon(
   sides: number,
   startAngle = -Math.PI / 2,
 ): Point[] {
-  if (sides < 3) throw new Error(`regularPolygon requires at least 3 sides, got ${sides}`);
+  if (sides < 3) {throw new Error(`regularPolygon requires at least 3 sides, got ${sides}`);}
   return Array.from({length: sides}, (_, i) => {
     const angle = startAngle + (2 * Math.PI * i) / sides;
     return {
@@ -159,13 +159,13 @@ export const SHAPES: Shape[] = [
         label: 'Width (px)',
         defaultValue: 200,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
       { id: 'height',
         label: 'Height (px)',
         defaultValue: 200,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
     ],
     build: (center, params, style) => {
@@ -187,11 +187,11 @@ export const SHAPES: Shape[] = [
     id: 'circle',
     label: 'Circle',
     parameters: [
-      { id: `radius`,
+      { id: 'radius',
         label: 'Radius (px)',
         defaultValue: 100,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
     ],
     build: (center, params, style) => makeCircle(
@@ -210,21 +210,21 @@ export const SHAPES: Shape[] = [
         label: 'Width (px)',
         defaultValue: 200,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
       {
         id: 'height',
         label: 'Height (px)',
         defaultValue: 200,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
       {
         id: 'cornerRadius',
         label: 'Corner Radius (px)',
         defaultValue: 25,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
     ],
     build: (center, params, style) =>
@@ -238,7 +238,7 @@ export const SHAPES: Shape[] = [
         style
       ),
   },
-  
+
   {
     id: 'ellipse',
     label: 'Ellipse',
@@ -248,19 +248,19 @@ export const SHAPES: Shape[] = [
         label: 'Radius X (px)',
         defaultValue: 150,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
       {
         id: 'radiusY',
         label: 'Radius Y (px)',
         defaultValue: 100,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
     ],
     build: (center, params, style) => makeEllipse(center, params.radiusX, params.radiusY, style),
   },
-  
+
   {
     id: 'line',
     label: 'Line',
@@ -270,13 +270,13 @@ export const SHAPES: Shape[] = [
         label: 'Length (px)',
         defaultValue: 200,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
       {
         id: 'angle',
         label: 'Angle (degrees)',
         defaultValue: 0,
-        unit: "deg"
+        unit: 'deg',
       },
     ],
     build: (center, params, style) => {
@@ -291,7 +291,7 @@ export const SHAPES: Shape[] = [
       );
     },
   },
-  
+
   {
     id: 'parallelogram',
     label: 'Parallelogram',
@@ -301,20 +301,20 @@ export const SHAPES: Shape[] = [
         label: 'Width (px)',
         defaultValue: 200,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
       {
         id: 'height',
         label: 'Height (px)',
         defaultValue: 150,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
       {
         id: 'offset',
         label: 'Offset',
         defaultValue: 50,
-        unit: 'px'
+        unit: 'px',
         // Can be negative for left-lean
       },
     ],
@@ -343,7 +343,7 @@ export const SHAPES: Shape[] = [
         label: 'Radius (px)',
         defaultValue: 100,
         min: 1,
-        unit: 'px'
+        unit: 'px',
       },
       {
         id: 'rotation',

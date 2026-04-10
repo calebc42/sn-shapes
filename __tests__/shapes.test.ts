@@ -7,12 +7,10 @@ import {
   PolygonGeometry,
   CircleGeometry,
   EllipseGeometry,
-  PenStyle,
   PEN_DEFAULTS,
 } from '../src/shapes';
 
 const CENTER: Point = {x: 100, y: 100};
-const SIZE = 200;
 
 function expectPenDefaults(geo: Geometry) {
   expect(geo.penColor).toBe(0x00);

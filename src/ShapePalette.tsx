@@ -60,36 +60,16 @@ async function resolvePageSize(): Promise<{ width: number; height: number }> {
       if (sizeRes?.success && sizeRes.result) {
         return sizeRes.result;
       }
-      console.warn('resolvePageSize: getPageSize failed', JSON.stringify(sizeRes));
-    } else {
-      console.warn('resolvePageSize: path/page lookup failed', JSON.stringify(pathRes), JSON.stringify(pageRes));
     }
-  } catch (e) {
-    console.warn('resolvePageSize: exception', e);
+  } catch {
+    // Fall through to defaults
   }
   return { width: DEFAULT_PAGE_WIDTH, height: DEFAULT_PAGE_HEIGHT };
 }
 
-//  async function resolvePageSize(): Promise<{ width: number; height: number }> {
-//    try {
-//      const pathRes = await PluginCommAPI.getCurrentFilePath();
-//      const pageRes = await PluginCommAPI.getCurrentPageNum();
-//      if (pathRes?.success && pageRes?.success) {
-//        const sizeRes = await PluginFileAPI.getPageSize(pathRes.result, pageRes.result);
-//        if (sizeRes?.success && sizeRes.result) {
-//          return sizeRes.result;
-//        }
-//      }
-//    } catch {
-//      // Fall through to defaults
-//    }
-//    return { width: DEFAULT_PAGE_WIDTH, height: DEFAULT_PAGE_HEIGHT };
-//  }
-
-async function insertShape(shape: Shape): Promise<void> {
-  const { width, height } = await resolvePageSize();
-  const center = { x: width / 2, y: height / 2 };
-  const shapeSize = width * SHAPE_SIZE_RATIO;
+async function insertShape(shape: Shape, pageWidth: number, pageHeight: number): Promise<void> {
+  const center = { x: pageWidth / 2, y: pageHeight / 2 };
+  const shapeSize = pageWidth * SHAPE_SIZE_RATIO;
   const geometry = shape.build(center, shapeSize);
   const res = await PluginCommAPI.insertGeometry(geometry);
   if (!res?.success) {
@@ -105,25 +85,23 @@ export default function ShapePalette() {
   const [error, setError] = useState<string | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Resolve page size once on mount for layout purposes only.
   const [pageWidth, setPageWidth] = useState(DEFAULT_PAGE_WIDTH);
+  const [pageHeight, setPageHeight] = useState(DEFAULT_PAGE_HEIGHT);
 
   useEffect(() => {
-    resolvePageSize().then(({ width }) => setPageWidth(width));
+    resolvePageSize().then(({ width, height }) => {
+      setPageWidth(width);
+      setPageHeight(height);
+    });
     return () => {
-      if (errorTimerRef.current) {
-        clearTimeout(errorTimerRef.current);
-      }
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     };
   }, []);
 
   const layout = computeLayout(pageWidth);
 
   const handleShapeTap = useCallback(async (shape: Shape) => {
-    if (insertingRef.current) {
-      return;
-    }
+    if (insertingRef.current) return;
     insertingRef.current = true;
     setError(null);
     if (errorTimerRef.current) {
@@ -131,7 +109,7 @@ export default function ShapePalette() {
       errorTimerRef.current = null;
     }
     try {
-      await insertShape(shape);
+      await insertShape(shape, pageWidth, pageHeight);
       PluginManager.closePluginView();
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Insert failed';
@@ -140,7 +118,7 @@ export default function ShapePalette() {
     } finally {
       insertingRef.current = false;
     }
-  }, []);
+  }, [pageWidth, pageHeight]);
 
   const handleOverlayPress = useCallback(() => {
     if (!insertingRef.current) {

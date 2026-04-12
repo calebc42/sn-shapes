@@ -80,6 +80,13 @@ async function insertShape(shape: Shape, pageWidth: number, pageHeight: number):
 
 const ERROR_DISPLAY_MS = 2000;
 
+const SidebarNode = () => (
+  <View style={styles.nodeContainer}>
+  <View style={styles.nodeDot} />
+  <View style={styles.nodeLine} />
+  </View>
+);
+
 export default function ShapePalette() {
   const insertingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,14 +101,14 @@ export default function ShapePalette() {
       setPageHeight(height);
     });
     return () => {
-      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      if (errorTimerRef.current) {clearTimeout(errorTimerRef.current);}
     };
   }, []);
 
   const layout = computeLayout(pageWidth);
 
   const handleShapeTap = useCallback(async (shape: Shape) => {
-    if (insertingRef.current) return;
+    if (insertingRef.current) {return;}
     insertingRef.current = true;
     setError(null);
     if (errorTimerRef.current) {
@@ -130,13 +137,6 @@ export default function ShapePalette() {
   for (let i = 0; i < SHAPES.length; i += COLS) {
     rows.push(SHAPES.slice(i, i + COLS));
   }
-
-  const SidebarNode = () => (
-    <View style={styles.nodeContainer}>
-      <View style={styles.nodeDot} />
-      <View style={styles.nodeLine} />
-    </View>
-  );
 
   return (
     <Pressable testID={TEST_IDS.overlay} style={styles.container} onPress={handleOverlayPress}>

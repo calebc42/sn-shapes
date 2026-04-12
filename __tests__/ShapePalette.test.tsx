@@ -218,6 +218,10 @@ describe('ShapePalette', () => {
     });
 
     await act(async () => {
+      await flushPromises(); // let mount's resolvePageSize complete
+    });
+
+    await act(async () => {
       findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
       await flushPromises();
     });
@@ -259,6 +263,10 @@ describe('ShapePalette', () => {
     let tree: ReactTestRenderer;
     act(() => {
       tree = create(<ShapePalette />);
+    });
+
+    await act(async () => {
+      await flushPromises(); // let mount's resolvePageSize complete
     });
 
     await act(async () => {

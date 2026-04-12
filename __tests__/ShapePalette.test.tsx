@@ -229,7 +229,11 @@ describe('ShapePalette', () => {
     });
 
     await act(async () => {
-      findByTestID(tree!, TEST_IDS.cell('rectangle')).props.onPress();
+      await flushPromises(); // let mount's resolvePageSize complete
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
       await flushPromises();
     });
 
@@ -273,7 +277,11 @@ describe('ShapePalette', () => {
     });
 
     await act(async () => {
-      findByTestID(tree!, TEST_IDS.cell('rectangle')).props.onPress();
+      await flushPromises(); // let mount's resolvePageSize complete
+    });
+
+    await act(async () => {
+      findByTestID(tree!, TEST_IDS.cell('square')).props.onPress();
       await flushPromises();
     });
 
